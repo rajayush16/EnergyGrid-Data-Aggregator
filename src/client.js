@@ -8,14 +8,15 @@ class EnergyGridClient {
     this.batchSize = options.batchSize || 10;
     this.maxRetries = options.maxRetries || 3;
     this.lastRequestAt = 0;
+    this.endpointPath = '/device/real/query';
   }
 
   buildUrl() {
-    return `${this.baseUrl.replace(/\/$/, '')}/device/real/query`;
+    return `${this.baseUrl.replace(/\/$/, '')}${this.endpointPath}`;
   }
 
-  buildSignature(url, timestamp) {
-    return md5(`${url}${this.token}${timestamp}`);
+  buildSignature(path, timestamp) {
+    return md5(`${path}${this.token}${timestamp}`);
   }
 
   async waitForRateLimit() {
@@ -33,7 +34,7 @@ class EnergyGridClient {
     while (true) {
       await this.waitForRateLimit();
       const timestamp = Date.now().toString();
-      const signature = this.buildSignature(url, timestamp);
+      const signature = this.buildSignature(this.endpointPath, timestamp);
 
       this.lastRequestAt = Date.now();
 
@@ -42,13 +43,11 @@ class EnergyGridClient {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Signature: signature,
-            Timestamp: timestamp,
-            Token: this.token
+            signature,
+            timestamp
           },
           body: JSON.stringify({
-            token: this.token,
-            serialNumbers
+            sn_list: serialNumbers
           })
         });
 
